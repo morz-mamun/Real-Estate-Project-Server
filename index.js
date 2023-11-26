@@ -27,6 +27,8 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    const userCollection = client.db("MorzeDB").collection("users");
+
     // jwt related API ->
     app.post("/jwt", async (req, res) => {
       const user = req.body;
@@ -38,6 +40,18 @@ async function run() {
 
     // middleware
     const verifyToken = async (req, res, next) => {};
+
+    // user related api ->
+    app.get("/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
