@@ -89,8 +89,14 @@ async function run() {
 
     app.post("/users", async (req, res) => {
       const user = req.body;
-      const result = await userCollection.insertOne(user);
-      res.send(result);
+      const filter = { email: user.email };
+      const existingUser = await userCollection.findOne(filter);
+      if (existingUser) {
+        res.send({ message: "User are already Exist.", insertedId: null });
+      } else {
+        const result = await userCollection.insertOne(user);
+        res.send(result);
+      }
     });
 
     app.patch("/users/admin/:id", async (req, res) => {
@@ -102,6 +108,13 @@ async function run() {
           role: user.role,
         },
       };
+
+      app.delete("/users/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const result = await userCollection.deleteOne(filter);
+        res.send(result);
+      });
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
