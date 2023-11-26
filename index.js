@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const app = express();
@@ -26,6 +27,18 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    // jwt related API ->
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "2h",
+      });
+      res.send({ token });
+    });
+
+    // middleware
+    const verifyToken = async (req, res, next) => {};
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
@@ -39,7 +52,7 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  console.log("server is running.");
+  res.send("server is running.");
 });
 
 app.listen(port, () => {
