@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -39,7 +39,35 @@ async function run() {
     });
 
     // middleware
-    const verifyToken = async (req, res, next) => {};
+
+    // verify token
+    const verifyToken = async (req, res, next) => {
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: "Forbidden Access" });
+      }
+
+      const token = req.headers.authorization.split(" ")[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(403).send("Unauthorized Access");
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+
+    // verify admin after verify token
+
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const filter = { email: email };
+      const user = await userCollection.findOne(filter);
+      const isAdmin = user?.role === "admin";
+      if (!isAdmin) {
+        return res.status(401).send("Unauthorized Access");
+      }
+      next();
+    };
 
     // user related api ->
     app.get("/users", async (req, res) => {
@@ -47,9 +75,34 @@ async function run() {
       res.send(result);
     });
 
+    // get user by email
+
+    app.get("/users/admin/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send("Forbidden access."); //This is optional
+      }
+      const filter = { email: email };
+      const user = await userCollection.findOne(filter);
+      res.send(user);
+    });
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    app.patch("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const user = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: user.role,
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
