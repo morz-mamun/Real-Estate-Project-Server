@@ -31,6 +31,9 @@ async function run() {
     const allPropertyCollection = client
       .db("MorzeDB")
       .collection("allProperty");
+    const verifiedPropertyCollection = client
+      .db("MorzeDB")
+      .collection("VerifiedProperties");
 
     // jwt related API ->
     app.post("/jwt", async (req, res) => {
@@ -72,16 +75,57 @@ async function run() {
       next();
     };
 
-    // All Property related API
+    // All added by Agent Property related API ->
     app.get("/allProperty", async (req, res) => {
       const result = await allPropertyCollection.find().toArray();
       res.send(result);
     });
+
+    app.get("/allProperty/status", async (req, res) => {
+      const statusFilter = "verified";
+      const filter = { status: statusFilter };
+      const result = await allPropertyCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    app.get("/allProperty/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const filter = { _id: new ObjectId(id) };
+      const result = await allPropertyCollection.find(filter).toArray();
+      res.send(result);
+    });
+
     app.post("/allProperty", async (req, res) => {
       const property = req.body;
       const result = await allPropertyCollection.insertOne(property);
       res.send(result);
     });
+
+    app.patch("/allProperty/verified/:id", async (req, res) => {
+      const id = req.params.id;
+      const update = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: update.status,
+        },
+      };
+      const result = await allPropertyCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // all verified properties by admin
+    // app.get("/verifiedProperty", async (req, res) => {
+    //   const result = await verifiedPropertyCollection.find().toArray();
+    //   res.send(result);
+    // });
+
+    // app.post("/verifiedProperty", async (req, res) => {
+    //   const property = req.body;
+    //   const result = await verifiedPropertyCollection.insertOne(property);
+    //   res.send(result);
+    // });
 
     // user related api ->
     app.get("/users", async (req, res) => {
