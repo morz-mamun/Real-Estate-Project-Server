@@ -28,6 +28,9 @@ async function run() {
     await client.connect();
 
     const userCollection = client.db("MorzeDB").collection("users");
+    const allPropertyCollection = client
+      .db("MorzeDB")
+      .collection("allProperty");
 
     // jwt related API ->
     app.post("/jwt", async (req, res) => {
@@ -68,6 +71,17 @@ async function run() {
       }
       next();
     };
+
+    // All Property related API
+    app.get("/allProperty", async (req, res) => {
+      const result = await allPropertyCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/allProperty", async (req, res) => {
+      const property = req.body;
+      const result = await allPropertyCollection.insertOne(property);
+      res.send(result);
+    });
 
     // user related api ->
     app.get("/users", async (req, res) => {
