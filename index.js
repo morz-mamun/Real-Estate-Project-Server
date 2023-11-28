@@ -31,9 +31,12 @@ async function run() {
     const allPropertyCollection = client
       .db("MorzeDB")
       .collection("allProperty");
-    const verifiedPropertyCollection = client
+    const wishPropertyCollection = client
       .db("MorzeDB")
-      .collection("VerifiedProperties");
+      .collection("wishProperties");
+    const offeredPropertyCollection = client
+      .db("MorzeDB")
+      .collection("offeredProperties");
 
     // jwt related API ->
     app.post("/jwt", async (req, res) => {
@@ -75,7 +78,50 @@ async function run() {
       next();
     };
 
-    // All added by Agent Property related API ->
+    // wishlist related API ->
+    app.get("/wishlist", async (req, res) => {
+      const result = await wishPropertyCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/wishlist/:email/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await wishPropertyCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/wishlist/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { userEmail: email };
+      const result = await wishPropertyCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    app.post("/wishlist", async (req, res) => {
+      const wishProperty = req.body;
+      const result = await wishPropertyCollection.insertOne(wishProperty);
+      res.send(result);
+    });
+
+    app.delete("/wishlist/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await wishPropertyCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    // Offered property related api =>
+    app.get("/offeredProperty", async (req, res) => {
+      const result = await offeredPropertyCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/offeredProperty", async (req, res) => {
+      const property = req.body;
+      const result = await offeredPropertyCollection.insertOne(property);
+      res.send(result);
+    });
+
+    // All Property related API ->
     app.get("/allProperty", async (req, res) => {
       const result = await allPropertyCollection.find().toArray();
       res.send(result);
@@ -90,7 +136,6 @@ async function run() {
 
     app.get("/allProperty/:id", async (req, res) => {
       const id = req.params.id;
-
       const filter = { _id: new ObjectId(id) };
       const result = await allPropertyCollection.find(filter).toArray();
       res.send(result);
@@ -102,7 +147,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/allProperty/verified/:id", async (req, res) => {
+    app.patch("/allProperty/:id", async (req, res) => {
       const id = req.params.id;
       const update = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -114,18 +159,6 @@ async function run() {
       const result = await allPropertyCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-
-    // all verified properties by admin
-    // app.get("/verifiedProperty", async (req, res) => {
-    //   const result = await verifiedPropertyCollection.find().toArray();
-    //   res.send(result);
-    // });
-
-    // app.post("/verifiedProperty", async (req, res) => {
-    //   const property = req.body;
-    //   const result = await verifiedPropertyCollection.insertOne(property);
-    //   res.send(result);
-    // });
 
     // user related api ->
     app.get("/users", async (req, res) => {
