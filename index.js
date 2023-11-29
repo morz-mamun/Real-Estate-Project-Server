@@ -37,6 +37,7 @@ async function run() {
     const offeredPropertyCollection = client
       .db("MorzeDB")
       .collection("offeredProperties");
+    const reviewCollection = client.db("MorzeDB").collection("reviews");
 
     // jwt related API ->
     app.post("/jwt", async (req, res) => {
@@ -78,6 +79,32 @@ async function run() {
       next();
     };
 
+    // review related API ->
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/reviews/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { reviewerEmail: email };
+      const result = await reviewCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+
+    app.delete("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await reviewCollection.deleteOne(filter);
+      res.send(result);
+    });
+
     // wishlist related API ->
     app.get("/wishlist", async (req, res) => {
       const result = await wishPropertyCollection.find().toArray();
@@ -114,9 +141,15 @@ async function run() {
       const result = await offeredPropertyCollection.find().toArray();
       res.send(result);
     });
+    app.get("/offeredProperty/:buyerEmail", async (req, res) => {
+      const buyerEmail = req.params.buyerEmail;
+      const filter = { buyerEmail: buyerEmail };
+      const result = await offeredPropertyCollection.find(filter).toArray();
+      res.send(result);
+    });
 
     app.get("/offeredProperty", async (req, res) => {
-      const email = req.query.email;
+      const email = req.query.agentEmail;
       const filter = { agentEmail: email };
       const result = await allPropertyCollection.find(filter).toArray();
       res.send(result);
