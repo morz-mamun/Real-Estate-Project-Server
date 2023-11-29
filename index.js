@@ -134,9 +134,17 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/allProperty/:id", async (req, res) => {
+    app.get("/allProperty/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const result = await allPropertyCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    app.get("/allProperty/:email/:id", async (req, res) => {
       const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
+      const email = req.params.email;
+      const filter = { _id: new ObjectId(id), email: email };
       const result = await allPropertyCollection.find(filter).toArray();
       res.send(result);
     });
@@ -144,6 +152,22 @@ async function run() {
     app.post("/allProperty", async (req, res) => {
       const property = req.body;
       const result = await allPropertyCollection.insertOne(property);
+      res.send(result);
+    });
+
+    app.put("/allProperty/:id", async (req, res) => {
+      const id = req.params.id;
+      const propertyInfo = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          title: propertyInfo.title,
+          location: propertyInfo.location,
+          price: propertyInfo.price,
+          propertyImage: propertyInfo.propertyImage,
+        },
+      };
+      const result = await allPropertyCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
