@@ -86,7 +86,7 @@ async function run() {
     app.get("/wishlist/:email/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
-      const result = await wishPropertyCollection.find().toArray();
+      const result = await wishPropertyCollection.find(filter).toArray();
       res.send(result);
     });
     app.get("/wishlist/:email", async (req, res) => {
@@ -115,6 +115,13 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/offeredProperty", async (req, res) => {
+      const email = req.query.email;
+      const filter = { agentEmail: email };
+      const result = await allPropertyCollection.find(filter).toArray();
+      res.send(result);
+    });
+
     app.post("/offeredProperty", async (req, res) => {
       const property = req.body;
       const result = await offeredPropertyCollection.insertOne(property);
@@ -134,20 +141,27 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/allProperty/:email", async (req, res) => {
-      const email = req.params.email;
+    app.get("/allProperty/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await allPropertyCollection.findOne(filter);
+      res.send(result);
+    });
+
+    app.get("/allProperty", async (req, res) => {
+      const email = req.query.email;
       const filter = { email: email };
       const result = await allPropertyCollection.find(filter).toArray();
       res.send(result);
     });
 
-    app.get("/allProperty/:email/:id", async (req, res) => {
-      const id = req.params.id;
-      const email = req.params.email;
-      const filter = { _id: new ObjectId(id), email: email };
-      const result = await allPropertyCollection.find(filter).toArray();
-      res.send(result);
-    });
+    // app.get("/allProperty/:email/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const email = req.params.email;
+    //   const filter = { _id: new ObjectId(id), email: email };
+    //   const result = await allPropertyCollection.findOne(filter);
+    //   res.send(result);
+    // });
 
     app.post("/allProperty", async (req, res) => {
       const property = req.body;
@@ -181,6 +195,13 @@ async function run() {
         },
       };
       const result = await allPropertyCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.delete("/allProperty/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await allPropertyCollection.deleteOne(filter);
       res.send(result);
     });
 
@@ -223,14 +244,14 @@ async function run() {
           role: user.role,
         },
       };
-
-      app.delete("/users/:id", async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) };
-        const result = await userCollection.deleteOne(filter);
-        res.send(result);
-      });
       const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await userCollection.deleteOne(filter);
       res.send(result);
     });
 
