@@ -27,7 +27,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const userCollection = client.db("MorzeDB").collection("users");
     const allPropertyCollection = client
@@ -141,18 +141,37 @@ async function run() {
     // Offered property related api =>
 
     app.get("/offeredProperty", async (req, res) => {
-      let query1 = {};
-      if (req.query?.agentEmail) {
-        query1 = { agentEmail: req.query.agentEmail };
+      let query = {};
+      if (req.query?.agentEmail && req.query?.status === "Bought") {
+        query = {
+          agentEmail: req.query.agentEmail,
+          status: req.query?.status,
+        };
       }
-      const result1 = await offeredPropertyCollection.find(query1).toArray();
-      res.send(result1);
+      const result = await offeredPropertyCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/offeredProperty", async (req, res) => {
+      let query = {};
+      if (req.query?.agentEmail) {
+        query = { agentEmail: req.query.agentEmail };
+      }
+      const result = await offeredPropertyCollection.find(query).toArray();
+      res.send(result);
     });
 
     app.get("/offeredProperty", async (req, res) => {
       const result = await offeredPropertyCollection.find().toArray();
       res.send(result);
     });
+
+    // app.get("/offeredProperty/status", async (req, res) => {
+    //   const statusFilter = "Bought";
+    //   const filter = { status: statusFilter };
+    //   const result = await allPropertyCollection.find(filter).toArray();
+    //   res.send(result);
+    // });
 
     app.get("/offeredProperty/:email", async (req, res) => {
       const bEmail = req.params.email;
@@ -332,10 +351,10 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
