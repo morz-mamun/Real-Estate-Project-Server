@@ -1,7 +1,9 @@
 const express = require("express");
+require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -137,21 +139,33 @@ async function run() {
     });
 
     // Offered property related api =>
+
+    app.get("/offeredProperty", async (req, res) => {
+      let query1 = {};
+      if (req.query?.agentEmail) {
+        query1 = { agentEmail: req.query.agentEmail };
+      }
+      const result1 = await offeredPropertyCollection.find(query1).toArray();
+      res.send(result1);
+    });
+
     app.get("/offeredProperty", async (req, res) => {
       const result = await offeredPropertyCollection.find().toArray();
       res.send(result);
     });
-    app.get("/offeredProperty/:buyerEmail", async (req, res) => {
-      const buyerEmail = req.params.buyerEmail;
-      const filter = { buyerEmail: buyerEmail };
+
+    app.get("/offeredProperty/:email", async (req, res) => {
+      const bEmail = req.params.email;
+      const filter = { buyerEmail: bEmail };
       const result = await offeredPropertyCollection.find(filter).toArray();
       res.send(result);
     });
 
-    app.get("/offeredProperty", async (req, res) => {
-      const email = req.query.agentEmail;
-      const filter = { agentEmail: email };
-      const result = await allPropertyCollection.find(filter).toArray();
+    app.get("/offeredProperty/:email/:id", async (req, res) => {
+      const id = req.params.id;
+      const bEmail = req.params.email;
+      const filter = { _id: new ObjectId(id), buyerEmail: bEmail };
+      const result = await offeredPropertyCollection.find(filter).toArray();
       res.send(result);
     });
 
@@ -161,7 +175,34 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/offeredProperty/:id", async (req, res) => {
+      const id = req.params.id;
+      const update = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: update.status,
+          transactionId: update.transactionId,
+        },
+      };
+      const result = await offeredPropertyCollection.updateOne(
+        filter,
+        updateDoc
+      );
+      res.send(result);
+    });
+
     // All Property related API ->
+
+    app.get("/allProperty", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email };
+      }
+      const result = await allPropertyCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.get("/allProperty", async (req, res) => {
       const result = await allPropertyCollection.find().toArray();
       res.send(result);
@@ -180,21 +221,6 @@ async function run() {
       const result = await allPropertyCollection.findOne(filter);
       res.send(result);
     });
-
-    app.get("/allProperty", async (req, res) => {
-      const email = req.query.email;
-      const filter = { email: email };
-      const result = await allPropertyCollection.find(filter).toArray();
-      res.send(result);
-    });
-
-    // app.get("/allProperty/:email/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const email = req.params.email;
-    //   const filter = { _id: new ObjectId(id), email: email };
-    //   const result = await allPropertyCollection.findOne(filter);
-    //   res.send(result);
-    // });
 
     app.post("/allProperty", async (req, res) => {
       const property = req.body;
@@ -286,6 +312,23 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const result = await userCollection.deleteOne(filter);
       res.send(result);
+    });
+
+    // payment intent - to create clientSecret
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      console.log(amount, "amount inside the intent");
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        // this is very important.
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
     });
 
     // Send a ping to confirm a successful connection
